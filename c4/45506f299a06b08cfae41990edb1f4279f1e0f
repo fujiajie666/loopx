@@ -1,0 +1,33 @@
+examples/fixtures/periodic-report-editorial-dense.public.json
+  s_b363f6463cadc3::t_183bb1dcb320e7 13-47,55,71,75-84,92,111,119-136,142
+examples/periodic-report-html-smoke.py
+  s_b363f6463cadc3::t_54c9098340e249 21,41,43-46,50,58-69
+loopx/capabilities/periodic_report/adapters.py
+  s_b363f6463cadc3::t_9b052ee95fc1eb 24-36,163-273,401,459,503,509-510
+loopx/presentation/renderers/periodic_report_html.py
+  s_b363f6463cadc3::t_b8e1f7e64b7278 16-19,67-179,182-201,204-209,217,227-228,234,238,244-245,249,255-256,262,273,277,279,283,288,290,296-354,360-362,366,369-370,408-410,412-414,418-419,428,430,457-462,483-492,514-516,518,554-555,557,560-576,583-591,593-596,611-615,619-620,622-623,628-629,633,637-639,645,652-681,684,690-691,693,695-698,701-702,704-705,708-709,711-720,722,746,752,754,758-759,762-763
+loopx/presentation/renderers/periodic_report_markdown.py
+  s_b363f6463cadc3::t_74034bf7915ffa 30-84,94-96,100-103,105-110,112-122,125,128-134,154-161
+tests/capabilities/test_periodic_report_adapters.py
+  s_b363f6463cadc3::t_0dc16f5dc00c15 557-725,797-800
+tests/presentation/test_periodic_report_html.py
+  s_b363f6463cadc3::t_07fe5c85a08727 36-43,53-69,81-100,115-119,129,131-135,141,147,149,153-154,157-158,190-191,195,201,205,208-211,224,226-265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c445506f299a06b08cfae41990edb1f4279f1e0f",
+  "prompts": {},
+  "sessions": {
+    "s_b363f6463cadc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7d92-180e-7471-94b9-7cc8d1e6a3a8",
+        "model": "unknown"
+      },
+      "human_author": "fujiajie.168 <fujiajie.168@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
