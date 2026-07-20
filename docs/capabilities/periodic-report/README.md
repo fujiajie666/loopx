@@ -43,11 +43,16 @@ implement the capability's ports without owning its lifecycle.
 - `markdown_v0` produces a compact linear artifact for documents and message
   adapters.
 - `html_artifact_v0` produces a self-contained, zero-build editorial report
-  with dense outcome rows, responsive section navigation, text search,
-  Markdown copy, and print/PDF controls. Its default `editorial_dense_v1`
-  profile keeps the report body focused on title, status, tags, summary,
-  next action, and evidence. Generation metadata, source status, and digests
-  live in a collapsed supporting appendix instead of interrupting the report.
+  with dense outcome rows, responsive deep-linked section navigation, text
+  search, Markdown copy, and print/PDF controls. Its default
+  `editorial_dense_v2` profile accepts a profile-owned audience summary and at
+  most four first-screen highlights. Normalized items may declare
+  `visibility=primary|supporting` and a `content_kind`; `runtime` and
+  `delivery_receipt` items are rejected unless they are supporting context.
+  Generation metadata, source status, digests, and supporting items live in a
+  collapsed appendix instead of interrupting the report. The Markdown renderer
+  retains supporting items in a labeled appendix so copied and delivered text
+  remains complete.
   The renderer has no external runtime dependency and escapes all source
   content before rendering.
 
@@ -66,17 +71,34 @@ receipts:
 - visible body: outcomes, evidence, impact or risk expressed in the summary,
   status, and a concrete next action when one exists;
 - collapsed supporting context: profile identity, generation time, source
-  health, snapshot digests, and renderer lineage;
+  health, snapshot digests, renderer lineage, runtime notes, and delivery
+  receipts;
 - omitted by default: narration about how the report was generated, tool-use
   commentary, local paths, raw logs, or policy explanations that do not change
   an audience decision.
 
+Profiles may provide `editorial.kicker`, `period_label`, `summary`, `language`,
+and up to four highlights. A localized profile language also selects the
+built-in report controls and appendix labels. Items may use up to four ordered
+`details` rows to split dense evidence into named facts, plus `tag_labels` to
+display localized labels without changing canonical tags. The summary should
+state the audience outcome, material risk, or decision; artifact parity,
+archive-provider canaries,
+idempotency, digests, renderer versions, and delivery readback belong in
+supporting items or sink receipts. A `source_ref` is only a navigation source;
+frozen claims should be backed by the source snapshot digest/ref rather than an
+open-ended live query.
+
 Source adapters and profiles still decide what is material. The renderer does
-not guess business semantics or silently rewrite a weak report; it gives all
+not guess business semantics, delete supporting facts, or silently rewrite a weak report; it gives all
 projects one readable default once their facts have been normalized.
 
 HTML generation is separate from publication. A static-site, Lark HTML, or
 other hosting adapter may publish the artifact and return an exact readback
 receipt, but the renderer neither chooses a destination nor performs a write.
+An HTML host should publish the generated artifact without re-rendering its
+normalized document. A host that applies another presentation must preserve the
+artifact's primary/supporting visibility policy and validate direct section
+hashes after dynamic content is mounted.
 Project profiles still own language, layout policy, audience, cadence, and
 selection rules.

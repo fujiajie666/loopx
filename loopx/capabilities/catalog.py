@@ -581,7 +581,7 @@ BUILTIN_CAPABILITIES: tuple[dict[str, Any], ...] = (
             "The core owns material trigger classification, coalescing, cooldown/deduplication, period/profile binding, deterministic identity, receipts, run state, and retry projection.",
             "Profiles own schedule calculation, enabled trigger kinds, minimum interval, timezone, sections, audience, and project policy.",
             "Adapters own domain source collection; renderers and sinks own all provider effects and verified readback.",
-            "Markdown and HTML render from one normalized document; primary report facts stay visible while source receipts and generation metadata are collapsed supporting context in HTML.",
+            "Markdown and HTML render from one normalized document; runtime and delivery-receipt items must be supporting, HTML collapses them, and Markdown preserves them in a labeled appendix.",
             "Raw content, messages, logs, transcripts, credentials, secrets, and private paths are rejected.",
         ],
         "next_real_step": (
