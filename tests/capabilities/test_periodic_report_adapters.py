@@ -554,6 +554,175 @@ def test_source_result_rejects_fractional_ranking_integer() -> None:
         )
 
 
+def test_source_result_requires_runtime_and_delivery_items_to_be_supporting() -> None:
+    item = {
+        "item_id": "delivery_receipt",
+        "title": "Delivery receipt",
+        "summary": "The artifact digest was verified.",
+        "content_kind": "delivery_receipt",
+    }
+    with pytest.raises(ValueError, match="visibility must be supporting"):
+        build_periodic_report_source_result(
+            source_id="report_operations",
+            source_kind="report_operations",
+            status="complete",
+            observed_at="2026-07-20T00:40:00Z",
+            sections=[
+                {
+                    "section_id": "operations",
+                    "title": "Report operations",
+                    "items": [item],
+                }
+            ],
+        )
+
+    result = build_periodic_report_source_result(
+        source_id="report_operations",
+        source_kind="report_operations",
+        status="complete",
+        observed_at="2026-07-20T00:40:00Z",
+        sections=[
+            {
+                "section_id": "operations",
+                "title": "Report operations",
+                "items": [{**item, "visibility": "supporting"}],
+            }
+        ],
+    )
+    normalized = result["sections"][0]["items"][0]
+    assert normalized["content_kind"] == "delivery_receipt"
+    assert normalized["visibility"] == "supporting"
+
+
+def test_source_result_normalizes_bounded_item_details_and_tag_labels() -> None:
+    result = build_periodic_report_source_result(
+        source_id="release_notes",
+        source_kind="release_activity",
+        status="complete",
+        observed_at="2026-07-20T00:40:00Z",
+        sections=[
+            {
+                "section_id": "outcomes",
+                "title": "Outcomes",
+                "items": [
+                    {
+                        "item_id": "release",
+                        "title": "Release completed",
+                        "summary": "The release completed safely.",
+                        "tags": ["delivery"],
+                        "tag_labels": {"delivery": "安全交付"},
+                        "details": [
+                            {
+                                "label": "Evidence",
+                                "text": "All staged checks passed.",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    )
+
+    item = result["sections"][0]["items"][0]
+    assert item["tag_labels"] == {"delivery": "安全交付"}
+    assert item["details"] == [
+        {"label": "Evidence", "text": "All staged checks passed."}
+    ]
+
+    for field, value, match in (
+        ("tag_labels", {"unknown": "Unknown"}, "unknown tag"),
+        (
+            "details",
+            [{"label": str(index), "text": "detail"} for index in range(5)],
+            "at most 4",
+        ),
+    ):
+        with pytest.raises(ValueError, match=match):
+            build_periodic_report_source_result(
+                source_id="release_notes",
+                source_kind="release_activity",
+                status="complete",
+                observed_at="2026-07-20T00:40:00Z",
+                sections=[
+                    {
+                        "section_id": "outcomes",
+                        "title": "Outcomes",
+                        "items": [
+                            {
+                                "item_id": "release",
+                                "title": "Release completed",
+                                "summary": "The release completed safely.",
+                                "tags": ["delivery"],
+                                field: value,
+                            }
+                        ],
+                    }
+                ],
+            )
+
+
+def test_document_normalizes_bounded_editorial_first_screen() -> None:
+    source = build_periodic_report_source_result(
+        source_id="release_notes",
+        source_kind="release_activity",
+        status="complete",
+        observed_at="2026-07-20T00:40:00Z",
+        sections=[],
+    )
+    editorial = {
+        "language": "zh-CN",
+        "kicker": "首次全量工作汇报",
+        "period_label": "7 月 10 日–19 日（北京时间）",
+        "summary": "交付结果已形成规模，当前重点转向开放项收敛。",
+        "highlights": [
+            {
+                "highlight_id": f"metric_{index}",
+                "value": str(index),
+                "label": f"指标 {index}",
+                "tone": "attention" if index == 4 else "positive",
+            }
+            for index in range(1, 5)
+        ],
+    }
+    document = build_periodic_report_document(
+        title="项目工作汇报",
+        generated_at="2026-07-20T01:00:00Z",
+        period_window={
+            "start_at": "2026-07-13T00:00:00Z",
+            "end_at": "2026-07-20T00:00:00Z",
+        },
+        profile={"profile_id": "maintenance", "profile_version": "v1"},
+        sources=[source],
+        editorial=editorial,
+    )
+
+    assert document["editorial"] == editorial
+    assert document["boundary"]["editorial_selection_owned_by_profile"] is True
+
+    with pytest.raises(ValueError, match="at most 4"):
+        build_periodic_report_document(
+            title="Project report",
+            generated_at="2026-07-20T01:00:00Z",
+            period_window={
+                "start_at": "2026-07-13T00:00:00Z",
+                "end_at": "2026-07-20T00:00:00Z",
+            },
+            profile={"profile_id": "maintenance", "profile_version": "v1"},
+            sources=[source],
+            editorial={
+                "summary": "Too many first-screen metrics.",
+                "highlights": [
+                    {
+                        "highlight_id": f"metric_{index}",
+                        "value": str(index),
+                        "label": f"Metric {index}",
+                    }
+                    for index in range(5)
+                ],
+            },
+        )
+
+
 def test_source_result_rejects_raw_fields_before_projection() -> None:
     with pytest.raises(ValueError, match="forbidden raw/private field"):
         build_periodic_report_source_result(
@@ -625,7 +794,10 @@ def test_source_result_rejects_credential_like_text_values() -> None:
                         {
                             "item_id": "release",
                             "title": "Release",
-                            "summary": "to" + "ken=super" + "sec" + "retabcdef1234567890",
+                            "summary": "to"
+                            + "ken=super"
+                            + "sec"
+                            + "retabcdef1234567890",
                             "status": "published",
                         }
                     ],

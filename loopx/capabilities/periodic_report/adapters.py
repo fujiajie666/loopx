@@ -21,6 +21,19 @@ _TOKEN_RE = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
 _SOURCE_STATUSES = {"complete", "partial", "failed", "unknown"}
 _SINK_STATUSES = {"pending", "sent", "failed", "skipped", "unknown"}
 _SINK_ROLES = {"archive", "delivery"}
+_ITEM_CONTENT_KINDS = {
+    "capability_change",
+    "decision",
+    "delivery_receipt",
+    "next_action",
+    "outcome",
+    "risk",
+    "runtime",
+}
+_ITEM_VISIBILITIES = {"primary", "supporting"}
+_SUPPORTING_CONTENT_KINDS = {"delivery_receipt", "runtime"}
+_HIGHLIGHT_TONES = {"attention", "neutral", "positive"}
+_LANGUAGE_RE = re.compile(r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$")
 SourceCollector = Callable[[Mapping[str, Any]], Mapping[str, Any]]
 ArtifactRenderer = Callable[[Mapping[str, Any]], Mapping[str, Any]]
 ArtifactSink = Callable[[Mapping[str, Any], Mapping[str, Any]], Mapping[str, Any]]
@@ -147,6 +160,117 @@ def _normalize_item(raw: object, *, label: str) -> dict[str, Any]:
     )
     if tags:
         normalized["tags"] = tags
+    raw_tag_labels = _mapping(item.get("tag_labels", {}), f"{label}.tag_labels")
+    tag_labels: dict[str, str] = {}
+    for raw_tag, raw_label in raw_tag_labels.items():
+        tag = _token(raw_tag, f"{label}.tag_labels key")
+        if tag not in tags:
+            raise ValueError(f"{label}.tag_labels contains an unknown tag {tag!r}")
+        tag_labels[tag] = _text(
+            raw_label,
+            f"{label}.tag_labels[{tag!r}]",
+            maximum=64,
+        )
+    if tag_labels:
+        normalized["tag_labels"] = {
+            tag: tag_labels[tag] for tag in sorted(tag_labels)
+        }
+    raw_details = _sequence(item.get("details", []), f"{label}.details")
+    if len(raw_details) > 4:
+        raise ValueError(f"{label}.details must contain at most 4 items")
+    details: list[dict[str, str]] = []
+    for detail_index, raw_detail in enumerate(raw_details):
+        detail_label = f"{label}.details[{detail_index}]"
+        detail = _mapping(raw_detail, detail_label)
+        details.append(
+            {
+                "label": _text(
+                    detail.get("label"), f"{detail_label}.label", maximum=40
+                ),
+                "text": _text(
+                    detail.get("text"), f"{detail_label}.text", maximum=500
+                ),
+            }
+        )
+    if details:
+        normalized["details"] = details
+    content_kind = _optional_text(
+        item.get("content_kind"), f"{label}.content_kind", maximum=128
+    )
+    if content_kind:
+        content_kind = _token(content_kind, f"{label}.content_kind")
+        if content_kind not in _ITEM_CONTENT_KINDS:
+            raise ValueError(f"{label}.content_kind is invalid")
+        normalized["content_kind"] = content_kind
+    visibility = _optional_text(
+        item.get("visibility"), f"{label}.visibility", maximum=128
+    )
+    if visibility:
+        visibility = _token(visibility, f"{label}.visibility")
+        if visibility not in _ITEM_VISIBILITIES:
+            raise ValueError(f"{label}.visibility is invalid")
+        normalized["visibility"] = visibility
+    if content_kind in _SUPPORTING_CONTENT_KINDS and visibility != "supporting":
+        raise ValueError(
+            f"{label}.visibility must be supporting for {content_kind} content"
+        )
+    return normalized
+
+
+def _normalize_editorial(raw: object) -> dict[str, Any] | None:
+    if raw is None:
+        return None
+    editorial = _mapping(raw, "editorial")
+    normalized: dict[str, Any] = {}
+    for field, maximum in (
+        ("kicker", 120),
+        ("summary", 600),
+        ("period_label", 160),
+    ):
+        value = _optional_text(
+            editorial.get(field), f"editorial.{field}", maximum=maximum
+        )
+        if value:
+            normalized[field] = value
+    language = _optional_text(
+        editorial.get("language"), "editorial.language", maximum=64
+    )
+    if language:
+        if not _LANGUAGE_RE.fullmatch(language):
+            raise ValueError("editorial.language must be a BCP-47-like language tag")
+        normalized["language"] = language
+
+    raw_highlights = _sequence(editorial.get("highlights", []), "editorial.highlights")
+    if len(raw_highlights) > 4:
+        raise ValueError("editorial.highlights must contain at most 4 items")
+    highlights: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for index, raw_highlight in enumerate(raw_highlights):
+        label = f"editorial.highlights[{index}]"
+        highlight = _mapping(raw_highlight, label)
+        highlight_id = _token(highlight.get("highlight_id"), f"{label}.highlight_id")
+        if highlight_id in seen_ids:
+            raise ValueError(f"duplicate editorial highlight_id {highlight_id!r}")
+        seen_ids.add(highlight_id)
+        normalized_highlight: dict[str, Any] = {
+            "highlight_id": highlight_id,
+            "value": _text(highlight.get("value"), f"{label}.value", maximum=48),
+            "label": _text(highlight.get("label"), f"{label}.label", maximum=80),
+        }
+        detail = _optional_text(highlight.get("detail"), f"{label}.detail", maximum=160)
+        if detail:
+            normalized_highlight["detail"] = detail
+        tone = _optional_text(highlight.get("tone"), f"{label}.tone", maximum=128)
+        if tone:
+            tone = _token(tone, f"{label}.tone")
+            if tone not in _HIGHLIGHT_TONES:
+                raise ValueError(f"{label}.tone is invalid")
+            normalized_highlight["tone"] = tone
+        highlights.append(normalized_highlight)
+    if highlights:
+        normalized["highlights"] = highlights
+    if not normalized:
+        raise ValueError("editorial must contain audience-facing content")
     return normalized
 
 
@@ -274,6 +398,7 @@ def build_periodic_report_document(
     period_window: Mapping[str, Any],
     profile: Mapping[str, Any],
     sources: Sequence[Mapping[str, Any]],
+    editorial: Mapping[str, Any] | None = None,
     trigger_receipt: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Merge normalized source sections into one renderer-neutral document."""
@@ -331,6 +456,7 @@ def build_periodic_report_document(
         )
 
     normalized_trigger = _normalize_trigger_receipt(trigger_receipt)
+    normalized_editorial = _normalize_editorial(editorial)
     normalized_profile = {
         "profile_id": _token(profile.get("profile_id"), "profile.profile_id"),
         "profile_version": _token(
@@ -374,11 +500,14 @@ def build_periodic_report_document(
         "boundary": {
             "schedule_policy_owned_by_profile": True,
             "business_semantics_owned_by_sources": True,
+            "editorial_selection_owned_by_profile": True,
             "renderer_owns_business_semantics": False,
             "sink_owns_business_semantics": False,
             "external_writes_performed": False,
         },
     }
+    if normalized_editorial:
+        document["editorial"] = normalized_editorial
     if normalized_trigger:
         document["trigger_receipt"] = normalized_trigger
     _reject_private_fields(document, "document")

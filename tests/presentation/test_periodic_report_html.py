@@ -33,6 +33,14 @@ def _document() -> dict[str, object]:
                         "status": "published",
                         "source_ref": "javascript:alert(1)",
                         "next_action": "Observe adoption.",
+                        "tags": ["delivery"],
+                        "tag_labels": {"delivery": "Shipped safely"},
+                        "details": [
+                            {
+                                "label": "Evidence",
+                                "text": "One staged rollout completed.",
+                            }
+                        ],
                     },
                     {
                         "item_id": "release_2.5",
@@ -42,7 +50,23 @@ def _document() -> dict[str, object]:
                         "source_ref": "https://example.test/releases/2.5",
                     },
                 ],
-            }
+            },
+            {
+                "section_id": "report_operations",
+                "title": "Report operations",
+                "order": 90,
+                "items": [
+                    {
+                        "item_id": "delivery_parity",
+                        "title": "Artifacts share one normalized document",
+                        "summary": "Delivery digests were verified.",
+                        "value_rank": 10,
+                        "content_kind": "delivery_receipt",
+                        "visibility": "supporting",
+                        "status": "verified",
+                    }
+                ],
+            },
         ],
     )
     return build_periodic_report_document(
@@ -54,6 +78,26 @@ def _document() -> dict[str, object]:
         },
         profile={"profile_id": "maintenance", "profile_version": "v1"},
         sources=[source],
+        editorial={
+            "language": "en",
+            "kicker": "Engineering · Weekly report",
+            "period_label": "July 13–20, 2026",
+            "summary": "One release shipped; one candidate needs review.",
+            "highlights": [
+                {
+                    "highlight_id": "shipped",
+                    "value": "1",
+                    "label": "Release shipped",
+                    "tone": "positive",
+                },
+                {
+                    "highlight_id": "review",
+                    "value": "1",
+                    "label": "Needs review",
+                    "tone": "attention",
+                },
+            ],
+        },
     )
 
 
@@ -68,7 +112,11 @@ def test_html_artifact_is_self_contained_interactive_and_registry_valid() -> Non
     assert 'data-renderer="html_artifact_v0"' in content
     assert "data-report-search" in content
     assert 'data-section-filter="completed"' in content
-    assert 'data-presentation="editorial_dense_v1"' in content
+    assert 'data-presentation="editorial_dense_v2"' in content
+    assert '<html lang="en">' in content
+    assert "One release shipped; one candidate needs review." in content
+    assert "July 13–20, 2026" in content
+    assert 'href="#section-completed"' in content
     assert "data-copy-markdown" in content
     assert "data-print-report" in content
     assert "Release &lt;script&gt;alert(1)&lt;/script&gt;" in content
@@ -78,25 +126,36 @@ def test_html_artifact_is_self_contained_interactive_and_registry_valid() -> Non
     assert "https://cdn" not in content
     assert '<details class="supporting" data-supporting-context>' in content
     assert content.index("Release candidate") < content.index(
-        "Report metadata and source receipts"
+        "Appendix: delivery and runtime context"
     )
+    primary_body, supporting = content.split(
+        '<details class="supporting" data-supporting-context>', maxsplit=1
+    )
+    assert "Artifacts share one normalized document" not in primary_body
+    assert "Artifacts share one normalized document" in supporting
     assert artifact["renderer_kind"] == "html"
     assert artifact["media_type"] == "text/html; charset=utf-8"
     assert artifact["single_file"] is True
     assert artifact["zero_build"] is True
     assert artifact["external_dependencies"] == []
-    assert artifact["presentation_profile"] == "editorial_dense_v1"
+    assert artifact["presentation_profile"] == "editorial_dense_v2"
     assert artifact["content_policy"] == {
         "primary_body_fields": [
             "title",
             "status",
             "tags",
+            "tag_labels",
             "summary",
+            "details",
             "next_action",
             "source_ref",
         ],
+        "primary_visibility": "primary",
+        "supporting_visibility": "supporting",
         "supporting_context": "collapsed",
         "process_narration_default_visible": False,
+        "primary_item_count": 2,
+        "supporting_item_count": 1,
     }
     assert artifact["boundary"] == {
         "schedule_policy_applied": False,
@@ -128,19 +187,28 @@ def test_html_and_markdown_share_one_document_and_primary_content() -> None:
     for expected in (
         "Release &lt;script&gt;alert(1)&lt;/script&gt;",
         "Published &amp; verified.",
+        "One staged rollout completed.",
+        "Shipped safely",
         "Observe adoption.",
         "Release candidate",
         "Ready for review.",
+        "One release shipped; one candidate needs review.",
     ):
         assert expected in html_artifact["content"]
     for expected in (
         "Release <script>alert(1)</script>",
         "Published & verified.",
+        "One staged rollout completed.",
         "Observe adoption.",
         "Release candidate",
         "Ready for review.",
+        "One release shipped; one candidate needs review.",
     ):
         assert expected in markdown_artifact["content"]
+    assert "Appendix: delivery and runtime context" in markdown_artifact["content"]
+    assert "Artifacts share one normalized document" in markdown_artifact["content"]
+    assert markdown_artifact["content_policy"]["supporting_context"] == "appendix"
+    assert markdown_artifact["content_policy"]["supporting_item_count"] == 1
 
 
 def test_source_receipts_are_supporting_context_not_visible_body_copy() -> None:
@@ -153,6 +221,45 @@ def test_source_receipts_are_supporting_context_not_visible_body_copy() -> None:
 
     assert "Release candidate" in primary_body
     assert "snapshot_" not in primary_body
-    assert "source receipts" not in primary_body.lower()
+    assert "supporting context" not in primary_body.lower()
     assert "snapshot_" in supporting
-    assert "source receipts" in supporting.lower()
+    assert "Artifacts share one normalized document" in supporting
+
+
+def test_html_hash_navigation_and_copy_status_have_safe_initial_state() -> None:
+    content = periodic_report_html_renderer_adapter().render(_document())["content"]
+
+    assert 'href="#section-completed"' in content
+    assert "window.addEventListener('hashchange', restoreHash)" in content
+    assert "location.hash.startsWith('#section-')" in content
+    assert 'data-copy-success="Full report copied"' in content
+    assert 'data-copy-failed="Copy failed"' in content
+
+
+def test_zh_report_localizes_controls_and_keeps_supporting_markdown() -> None:
+    document = _document()
+    document["editorial"]["language"] = "zh-CN"
+
+    html = periodic_report_html_renderer_adapter().render(document)["content"]
+    markdown = periodic_report_markdown_renderer_adapter().render(document)["content"]
+
+    for expected in (
+        "报告目录",
+        "全部章节",
+        "搜索报告内容",
+        "复制完整文字版",
+        "打印 / 存为 PDF",
+        "附录：投递与运行信息",
+        "查看来源 ↗",
+    ):
+        assert expected in html
+    for unexpected in (
+        "Report index",
+        "All sections",
+        "Filter report",
+        "Copy Markdown",
+        "Supporting context",
+    ):
+        assert unexpected not in html
+    assert "## 附录：投递与运行信息" in markdown
+    assert "Artifacts share one normalized document" in markdown
