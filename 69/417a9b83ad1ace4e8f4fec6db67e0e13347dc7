@@ -1,0 +1,25 @@
+loopx/capabilities/periodic_report/__init__.py
+  s_b363f6463cadc3::t_8e2da610260f2e 9,25
+loopx/presentation/renderers/periodic_report_html.py
+  s_b363f6463cadc3::t_d61208cb63bed8 14,611,622,765-770
+loopx/presentation/renderers/periodic_report_markdown.py
+  s_b363f6463cadc3::t_e41e0482b08316 12,93,97,162-167
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "69417a9b83ad1ace4e8f4fec6db67e0e13347dc7",
+  "prompts": {},
+  "sessions": {
+    "s_b363f6463cadc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7d92-180e-7471-94b9-7cc8d1e6a3a8",
+        "model": "unknown"
+      },
+      "human_author": "fujiajie.168 <fujiajie.168@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
