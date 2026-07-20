@@ -1,0 +1,25 @@
+docs/capabilities/periodic-report/README.md
+  s_b363f6463cadc3::t_eb40daf483755b 48-52,83-95,102-108
+docs/reference/protocols/periodic-report-v0.md
+  s_b363f6463cadc3::t_8ec514ad20fa8e 126-128,140-156
+skills/loopx-self-repair/references/repair-patterns.md
+  s_b363f6463cadc3::t_085b0e1912aacb 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "81b71e044b8d1279f9d9c398432fa90256405ee7",
+  "prompts": {},
+  "sessions": {
+    "s_b363f6463cadc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7d92-180e-7471-94b9-7cc8d1e6a3a8",
+        "model": "unknown"
+      },
+      "human_author": "fujiajie.168 <fujiajie.168@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
