@@ -1,0 +1,121 @@
+docs/capabilities/periodic-report/README.md
+  s_b363f6463cadc3::t_19209834a9d7cf 9,11-18,48-90
+docs/product/release-readiness.md
+  s_b363f6463cadc3::t_d96a1a85f0e7dd 55-79,590-617
+docs/quota-allocation.md
+  s_b363f6463cadc3::t_b1b6abcaf8daaa 494-507
+docs/reference/protocols/periodic-report-v0.md
+  s_b363f6463cadc3::t_c9f22972bceff8 3-23,49-77
+examples/bootstrap-command-pack-smoke.py
+  s_b363f6463cadc3::t_633eae6301dc09 419-420
+examples/control_plane/agent-monitor-only-work-mode-smoke.py
+  s_b363f6463cadc3::t_c584fa7efbdac5 1-157
+examples/control_plane/lark-inbox-priority-smoke.py
+  s_b363f6463cadc3::t_016d0310e37cbb 33,36,68-76,95-105,173,175,247,249,271-280
+examples/fixtures/periodic-report-extension-modes.public.json
+  s_b363f6463cadc3::t_30b72e16cd563d 1-73
+examples/fixtures/periodic-report-product-profiles.public.json
+  s_b363f6463cadc3::t_670c8789f8667e 1-91
+examples/loopx-update-smoke.py
+  s_b363f6463cadc3::t_df7d2c19e4a5fb 31-34,54-59,72,101-106
+examples/periodic-report-bindings-smoke.py
+  s_b363f6463cadc3::t_9796ce14ee407a 1-102
+examples/periodic-report-profile-smoke.py
+  s_b363f6463cadc3::t_345b0bc9d83c03 1-44
+examples/project/configure-goal-smoke.py
+  s_b363f6463cadc3::t_e90c4bcaa2ebb3 141-142,171,181-183,262-263,303-305,488-500
+examples/release-wrapper-import-isolation-smoke.py
+  s_b363f6463cadc3::t_11fe3eb524b5c2 32
+examples/release/release-readiness-doc-smoke.py
+  s_b363f6463cadc3::t_3446f1307b8f2f 85-90
+loopx/__init__.py
+  s_b363f6463cadc3::t_f513b071a36786 5
+loopx/benchmark_adapters/skillsbench_failure_signals.py
+  s_b363f6463cadc3::t_3629721bab9abf 86,94,103-104,110-118,164,180-196,222-242,277,281-284,286,288-290,292,299-302
+loopx/benchmark_adapters/skillsbench_setup_preflight.py
+  s_b363f6463cadc3::t_538b594d59d50b 4,14,18-71,128,134-136,149,176,192-198,214-220,250-252,270-272
+loopx/capabilities/catalog.py
+  s_b363f6463cadc3::t_44e8827bab5734 540,547,549-553,566-575,591-615,621-622,629
+loopx/capabilities/periodic_report/__init__.py
+  s_b363f6463cadc3::t_6f64a6c55e9e9c 16-21,23-30,37,39,41-42,47-49
+loopx/capabilities/periodic_report/archive.py
+  s_b363f6463cadc3::t_ec075d103576fa 1-7
+loopx/capabilities/periodic_report/bindings.py
+  s_b363f6463cadc3::t_c82e305081d9b1 1-705
+loopx/capabilities/periodic_report/cli.py
+  s_b363f6463cadc3::t_0a117f337c4f05 11,62-71,77-89,128-133,136
+loopx/capabilities/periodic_report/profile.py
+  s_b363f6463cadc3::t_9deaabcad369d1 1-235
+loopx/capabilities/periodic_report/triggers.py
+  s_b363f6463cadc3::t_4a3e236b356895 104-109
+loopx/cli_commands/registry_admin.py
+  s_b363f6463cadc3::t_518e967431f2eb 363-380,685-696,728-729
+loopx/cli_commands/support_control.py
+  s_b363f6463cadc3::t_f60bf5645c94a8 5,286-292,574-575,580-586,593-596
+loopx/configure_goal.py
+  s_b363f6463cadc3::t_7f8908c13dc380 47,224-227,410-411,540,633-644,858-859,878,897-913,947-962
+loopx/control_plane/agents/identity.py
+  s_b363f6463cadc3::t_e33918e9a0279d 14,50-52
+loopx/control_plane/agents/work_mode.py
+  s_b363f6463cadc3::t_88f721fc7180db 1-56
+loopx/control_plane/quota/task_orchestration.py
+  s_b363f6463cadc3::t_3065f4111510a6 29,47
+loopx/control_plane/scheduler/arbitration.py
+  s_b363f6463cadc3::t_c6d296b02c6b4d 16,80-82,158
+loopx/control_plane/scheduler/automation_liveness.py
+  s_b363f6463cadc3::t_5577e2d1637214 39-55
+loopx/control_plane/scheduler/scheduler_hint.py
+  s_b363f6463cadc3::t_55563d7bbb50fc 1040-1053
+loopx/control_plane/testing/model_behavior_qualification.py
+  s_b363f6463cadc3::t_dffac67ff7426c 503-506
+loopx/control_plane/work_items/interaction_contract.py
+  s_b363f6463cadc3::t_f929ea518a588a 111-112,182-183,314-320,409-412,544-547,572-576,715-716,721-725,821,835,1092-1093,1127-1132
+loopx/control_plane/work_items/primary_action.py
+  s_b363f6463cadc3::t_19a413d89e5ed7 206-216
+loopx/control_plane/work_items/work_lane_context.py
+  s_b363f6463cadc3::t_aa35acf1428512 98,106-107,113-116,123-127,129-135,150-155
+loopx/quota.py
+  s_b363f6463cadc3::t_fc612c4ffc9461 1208-1413,1564-1575,2350-2354
+loopx/self_update.py
+  s_b363f6463cadc3::t_a21c474b56982e 20-22,176-262,443-446,449-457,473-484,503,690-694,710-715
+loopx/status.py
+  s_b363f6463cadc3::t_40624c009f1897 1528,3004
+loopx/status_server.py
+  s_b363f6463cadc3::t_3f99c0a60d2486 63-64,361-368,415-420,471-472
+pyproject.toml
+  s_b363f6463cadc3::t_c180dfe3404bb8 7
+scripts/skillsbench_automation_loop.py
+  s_b363f6463cadc3::t_15c97647a1efc5 6202-6204,6323
+tests/capabilities/test_capability_extension_registry.py
+  s_b363f6463cadc3::t_842fb17aa2ac45 47,55,114-135
+tests/capabilities/test_periodic_report_bindings.py
+  s_b363f6463cadc3::t_cb54e48d8cf2f3 1-292
+tests/capabilities/test_periodic_report_profile.py
+  s_b363f6463cadc3::t_10106c14b44e32 1-137
+tests/control_plane/test_actual_default_model_behavior_portfolio.py
+  s_b363f6463cadc3::t_c61af8920f94ba 331-338
+tests/control_plane/test_doubao_model_behavior_actor.py
+  s_b363f6463cadc3::t_0fe698c1384dc3 177-209
+tests/test_self_update_runtime_activation.py
+  s_b363f6463cadc3::t_55c4095db8ee97 1-200
+tests/test_skillsbench_setup_preflight.py
+  s_b363f6463cadc3::t_a936cd3824790b 15-16,210-329,335,345,354,362,371,382,410-458,492,519-521
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0bb3de72a16fd52693b2361e9a0f71b619755ac3",
+  "prompts": {},
+  "sessions": {
+    "s_b363f6463cadc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7d92-180e-7471-94b9-7cc8d1e6a3a8",
+        "model": "unknown"
+      },
+      "human_author": "fujiajie.168 <fujiajie.168@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
