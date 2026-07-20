@@ -9,6 +9,7 @@ from ...capabilities.periodic_report.adapters import (
     ARTIFACT_SCHEMA,
     DOCUMENT_SCHEMA,
     PeriodicReportRendererAdapter,
+    validate_periodic_report_editorial,
 )
 from ..public_safety import redact_public_text
 
@@ -89,9 +90,11 @@ def render_periodic_report_markdown(
 
     if document.get("schema_version") != DOCUMENT_SCHEMA:
         raise ValueError(f"document must use {DOCUMENT_SCHEMA}")
+    validate_periodic_report_editorial(document)
     title = _safe(document.get("title"), maximum=200)
     window = _mapping(document.get("period_window"))
     editorial = _mapping(document.get("editorial"))
+    editorial_orchestration = _mapping(editorial.get("orchestration"))
     labels = periodic_report_labels(editorial.get("language"))
     period_label = _safe(editorial.get("period_label"), maximum=160)
     lines = [
@@ -156,6 +159,12 @@ def render_periodic_report_markdown(
             "supporting_visibility": "supporting",
             "supporting_context": "appendix",
             "process_narration_default_visible": False,
+            "editorial_summary_source": editorial_orchestration.get(
+                "summary_source", "none"
+            ),
+            "readability_policy": editorial_orchestration.get(
+                "readability_policy", "none"
+            ),
             "primary_item_count": primary_item_count,
             "supporting_item_count": supporting_item_count,
         },

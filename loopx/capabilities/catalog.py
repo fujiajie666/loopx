@@ -567,6 +567,11 @@ BUILTIN_CAPABILITIES: tuple[dict[str, Any], ...] = (
                 "module": "loopx.capabilities.periodic_report.core",
                 "doc": "docs/reference/protocols/periodic-report-v0.md",
             },
+            {
+                "schema_version": "periodic_report_editorial_orchestration_v0",
+                "module": "loopx.capabilities.periodic_report.adapters",
+                "doc": "docs/reference/protocols/periodic-report-v0.md",
+            },
         ],
         "smokes": [
             "python3 examples/periodic-report-smoke.py",
@@ -581,6 +586,7 @@ BUILTIN_CAPABILITIES: tuple[dict[str, Any], ...] = (
             "The core owns material trigger classification, coalescing, cooldown/deduplication, period/profile binding, deterministic identity, receipts, run state, and retry projection.",
             "Profiles own schedule calculation, enabled trigger kinds, minimum interval, timezone, sections, audience, and project policy.",
             "Adapters own domain source collection; renderers and sinks own all provider effects and verified readback.",
+            "The document builder compiles hero summaries only from typed primary outcomes, risks, and next actions; renderers reject authored or stale summaries.",
             "Markdown and HTML render from one normalized document; runtime and delivery-receipt items must be supporting, HTML collapses them, and Markdown preserves them in a labeled appendix.",
             "Raw content, messages, logs, transcripts, credentials, secrets, and private paths are rejected.",
         ],

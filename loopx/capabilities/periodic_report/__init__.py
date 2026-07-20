@@ -6,6 +6,7 @@ from .adapters import (
     PeriodicReportSinkAdapter,
     PeriodicReportSourceAdapter,
     build_periodic_report_document,
+    build_periodic_report_editorial,
     build_periodic_report_source_result,
 )
 from .archive import (
@@ -21,6 +22,7 @@ __all__ = [
     "PeriodicReportSinkAdapter",
     "PeriodicReportSourceAdapter",
     "build_periodic_report_document",
+    "build_periodic_report_editorial",
     "build_periodic_report_archive_bundle",
     "build_periodic_report_run",
     "build_periodic_report_source_result",

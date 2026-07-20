@@ -14,6 +14,7 @@ from .core import _normalize_trigger_receipt, _reject_raw_keys
 SOURCE_RESULT_SCHEMA = "periodic_report_source_result_v0"
 SECTION_SCHEMA = "periodic_report_section_v0"
 DOCUMENT_SCHEMA = "periodic_report_document_v0"
+EDITORIAL_ORCHESTRATION_SCHEMA = "periodic_report_editorial_orchestration_v0"
 ARTIFACT_SCHEMA = "periodic_report_artifact_v0"
 SINK_RESULT_SCHEMA = "periodic_report_sink_result_v0"
 
@@ -27,6 +28,7 @@ _ITEM_CONTENT_KINDS = {
     "delivery_receipt",
     "next_action",
     "outcome",
+    "progress",
     "risk",
     "runtime",
 }
@@ -188,7 +190,7 @@ def _normalize_item(raw: object, *, label: str) -> dict[str, Any]:
                     detail.get("label"), f"{detail_label}.label", maximum=40
                 ),
                 "text": _text(
-                    detail.get("text"), f"{detail_label}.text", maximum=500
+                    detail.get("text"), f"{detail_label}.text", maximum=360
                 ),
             }
         )
@@ -214,6 +216,21 @@ def _normalize_item(raw: object, *, label: str) -> dict[str, Any]:
         raise ValueError(
             f"{label}.visibility must be supporting for {content_kind} content"
         )
+    effective_visibility = visibility or "primary"
+    if effective_visibility == "primary" and len(str(normalized["summary"])) > 360:
+        raise ValueError(
+            f"{label}.summary exceeds the 360-character primary readability limit; "
+            "split supporting facts into details"
+        )
+    if (
+        effective_visibility == "primary"
+        and content_kind == "capability_change"
+        and len(details) < 2
+    ):
+        raise ValueError(
+            f"{label}.details must contain at least 2 items for primary "
+            "capability_change content"
+        )
     return normalized
 
 
@@ -222,11 +239,12 @@ def _normalize_editorial(raw: object) -> dict[str, Any] | None:
         return None
     editorial = _mapping(raw, "editorial")
     normalized: dict[str, Any] = {}
-    for field, maximum in (
-        ("kicker", 120),
-        ("summary", 600),
-        ("period_label", 160),
-    ):
+    if editorial.get("summary") is not None:
+        raise ValueError(
+            "editorial.summary is compiled from typed primary items; "
+            "do not provide authored process narration"
+        )
+    for field, maximum in (("kicker", 120), ("period_label", 160)):
         value = _optional_text(
             editorial.get(field), f"editorial.{field}", maximum=maximum
         )
@@ -312,6 +330,183 @@ def _normalize_sections(raw: object, *, label: str) -> list[dict[str, Any]]:
             }
         )
     return sorted(sections, key=lambda item: (int(item["order"]), item["section_id"]))
+
+
+def _summary_excerpt(value: object, *, maximum: int = 120) -> str:
+    text = " ".join(str(value or "").split()).strip()
+    if len(text) <= maximum:
+        return text.rstrip("。.!?；; ")
+    shortened = text[: maximum - 1].rstrip("，,、；;:：。.!? ")
+    return shortened + "…"
+
+
+def _ordered_primary_items(
+    sections: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    ordered_sections = sorted(
+        (_mapping(section, "sections[]") for section in sections),
+        key=lambda section: (
+            int(section.get("order") or 0),
+            str(section.get("section_id") or ""),
+        ),
+    )
+    items: list[tuple[int, str, dict[str, Any]]] = []
+    for section in ordered_sections:
+        for raw_item in _sequence(section.get("items", []), "sections[].items"):
+            item = _mapping(raw_item, "sections[].items[]")
+            if str(item.get("visibility") or "primary") == "primary":
+                items.append(
+                    (
+                        int(section.get("order") or 0),
+                        str(section.get("section_id") or ""),
+                        item,
+                    )
+                )
+    return [
+        item
+        for _section_order, _section_id, item in sorted(
+            items,
+            key=lambda entry: (
+                int(entry[2].get("value_rank") or 500),
+                entry[0],
+                entry[1],
+                str(entry[2].get("item_id") or ""),
+            ),
+        )
+    ]
+
+
+def _derive_editorial_summary(
+    sections: Sequence[Mapping[str, Any]],
+    *,
+    language: object,
+) -> tuple[str | None, list[dict[str, str]]]:
+    items = _ordered_primary_items(sections)
+
+    def first_of(*kinds: str) -> dict[str, Any] | None:
+        return next(
+            (
+                item
+                for item in items
+                if str(item.get("content_kind") or "") in kinds
+            ),
+            None,
+        )
+
+    outcome = first_of("outcome", "decision")
+    risk = first_of("risk")
+    next_item = first_of("next_action")
+    parts: list[tuple[str, dict[str, Any], str, str]] = []
+    if outcome:
+        role = str(outcome.get("content_kind") or "outcome")
+        parts.append((role, outcome, "title", str(outcome.get("title") or "")))
+    if risk:
+        parts.append(("risk", risk, "title", str(risk.get("title") or "")))
+    if next_item:
+        parts.append(
+            (
+                "next_action",
+                next_item,
+                "title",
+                str(next_item.get("title") or ""),
+            )
+        )
+    elif risk and risk.get("next_action"):
+        parts.append(
+            ("next_action", risk, "next_action", str(risk["next_action"]))
+        )
+    elif outcome and outcome.get("next_action"):
+        parts.append(
+            ("next_action", outcome, "next_action", str(outcome["next_action"]))
+        )
+
+    parts = [part for part in parts if _summary_excerpt(part[3])]
+    if not parts:
+        return None, []
+    chinese = str(language or "").lower().startswith("zh")
+    labels = (
+        {
+            "outcome": "本期进展",
+            "decision": "本期结论",
+            "risk": "当前风险",
+            "next_action": "下一步",
+        }
+        if chinese
+        else {
+            "outcome": "Outcome",
+            "decision": "Decision",
+            "risk": "Risk",
+            "next_action": "Next",
+        }
+    )
+    ending = "。" if chinese else "."
+    sentences = [
+        f"{labels[role]}：{_summary_excerpt(text)}{ending}"
+        if chinese
+        else f"{labels[role]}: {_summary_excerpt(text)}{ending}"
+        for role, _item, _field, text in parts
+    ]
+    refs = [
+        {
+            "role": role,
+            "source_id": str(item.get("source_id") or "unknown"),
+            "item_id": str(item.get("item_id") or "unknown"),
+            "field": field,
+        }
+        for role, item, field, _text_value in parts
+    ]
+    return " ".join(sentences), refs
+
+
+def build_periodic_report_editorial(
+    *,
+    sections: Sequence[Mapping[str, Any]],
+    editorial: Mapping[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Compile audience editorial copy from typed primary report items."""
+
+    normalized = _normalize_editorial(editorial) if editorial is not None else None
+    compiled: dict[str, Any] = dict(normalized or {})
+    summary, refs = _derive_editorial_summary(
+        sections,
+        language=compiled.get("language"),
+    )
+    if summary:
+        compiled["summary"] = _text(summary, "editorial.summary", maximum=600)
+        compiled["orchestration"] = {
+            "schema_version": EDITORIAL_ORCHESTRATION_SCHEMA,
+            "summary_source": "typed_primary_items",
+            "readability_policy": "audience_v1",
+            "summary_item_refs": refs,
+        }
+    return compiled or None
+
+
+def validate_periodic_report_editorial(document: Mapping[str, Any]) -> None:
+    """Require renderer input to carry the canonical compiled editorial summary."""
+
+    raw_editorial = document.get("editorial")
+    actual = dict(raw_editorial) if isinstance(raw_editorial, Mapping) else {}
+    profile_fields = {
+        key: actual[key]
+        for key in ("kicker", "period_label", "language", "highlights")
+        if key in actual
+    }
+    expected = build_periodic_report_editorial(
+        sections=[
+            _mapping(section, "document.sections[]")
+            for section in _sequence(document.get("sections", []), "document.sections")
+        ],
+        editorial=profile_fields or None,
+    ) or {}
+    if actual.get("summary") != expected.get("summary"):
+        raise ValueError(
+            "document.editorial.summary must be compiled from typed primary items"
+        )
+    if actual.get("orchestration") != expected.get("orchestration"):
+        raise ValueError(
+            "document.editorial.orchestration does not match the compiled summary"
+        )
 
 
 def build_periodic_report_source_result(
@@ -456,7 +651,14 @@ def build_periodic_report_document(
         )
 
     normalized_trigger = _normalize_trigger_receipt(trigger_receipt)
-    normalized_editorial = _normalize_editorial(editorial)
+    normalized_sections = sorted(
+        merged.values(),
+        key=lambda item: (int(item["order"]), str(item["section_id"])),
+    )
+    normalized_editorial = build_periodic_report_editorial(
+        sections=normalized_sections,
+        editorial=editorial,
+    )
     normalized_profile = {
         "profile_id": _token(profile.get("profile_id"), "profile.profile_id"),
         "profile_version": _token(
@@ -493,14 +695,12 @@ def build_periodic_report_document(
                 normalized_sources, key=lambda item: str(item["source_id"])
             )
         ],
-        "sections": sorted(
-            merged.values(),
-            key=lambda item: (int(item["order"]), str(item["section_id"])),
-        ),
+        "sections": normalized_sections,
         "boundary": {
             "schedule_policy_owned_by_profile": True,
             "business_semantics_owned_by_sources": True,
             "editorial_selection_owned_by_profile": True,
+            "editorial_summary_owned_by_orchestrator": True,
             "renderer_owns_business_semantics": False,
             "sink_owns_business_semantics": False,
             "external_writes_performed": False,
@@ -510,6 +710,7 @@ def build_periodic_report_document(
         document["editorial"] = normalized_editorial
     if normalized_trigger:
         document["trigger_receipt"] = normalized_trigger
+    validate_periodic_report_editorial(document)
     _reject_private_fields(document, "document")
     return document
 

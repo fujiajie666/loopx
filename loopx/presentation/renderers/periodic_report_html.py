@@ -11,6 +11,7 @@ from ...capabilities.periodic_report.adapters import (
     ARTIFACT_SCHEMA,
     DOCUMENT_SCHEMA,
     PeriodicReportRendererAdapter,
+    validate_periodic_report_editorial,
 )
 from ..public_safety import redact_public_text
 from .periodic_report_markdown import (
@@ -607,6 +608,7 @@ def render_periodic_report_html(document: Mapping[str, Any]) -> dict[str, Any]:
 
     if document.get("schema_version") != DOCUMENT_SCHEMA:
         raise ValueError(f"document must use {DOCUMENT_SCHEMA}")
+    validate_periodic_report_editorial(document)
     sections = _items(document.get("sections"))
     primary_sections = [
         section
@@ -617,6 +619,7 @@ def render_periodic_report_html(document: Mapping[str, Any]) -> dict[str, Any]:
     window = _mapping(document.get("period_window"))
     profile = _mapping(document.get("profile"))
     editorial = _mapping(document.get("editorial"))
+    editorial_orchestration = _mapping(editorial.get("orchestration"))
     labels = _html_labels(editorial.get("language"))
     title = _safe_text(document.get("title"), maximum=200)
     item_count = sum(len(_primary_items(section)) for section in sections)
@@ -759,6 +762,12 @@ def render_periodic_report_html(document: Mapping[str, Any]) -> dict[str, Any]:
             "supporting_visibility": "supporting",
             "supporting_context": "collapsed",
             "process_narration_default_visible": False,
+            "editorial_summary_source": editorial_orchestration.get(
+                "summary_source", "none"
+            ),
+            "readability_policy": editorial_orchestration.get(
+                "readability_policy", "none"
+            ),
             "primary_item_count": item_count,
             "supporting_item_count": supporting_item_count,
         },
