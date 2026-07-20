@@ -1,0 +1,27 @@
+examples/fixtures/periodic-report-editorial-dense.public.json
+  s_b363f6463cadc3::t_d12610e7a443c5 17-42
+examples/periodic-report-html-smoke.py
+  s_b363f6463cadc3::t_1bf725f8bcfedf 47-50,62-65
+tests/capabilities/test_periodic_report_adapters.py
+  s_b363f6463cadc3::t_7b7c9badf3ecf1 191,200-203,669-740,747-802,830-857,859-872
+tests/presentation/test_periodic_report_html.py
+  s_b363f6463cadc3::t_ff0f628054f38a 3-4,18,38,53,86,120-123,163-164,203,213,248,273-346
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e2bde2ed807a1e7737e147db886fdc2c7bfd9ea6",
+  "prompts": {},
+  "sessions": {
+    "s_b363f6463cadc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7d92-180e-7471-94b9-7cc8d1e6a3a8",
+        "model": "unknown"
+      },
+      "human_author": "fujiajie.168 <fujiajie.168@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
