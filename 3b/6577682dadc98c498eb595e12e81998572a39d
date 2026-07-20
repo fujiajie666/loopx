@@ -1,0 +1,27 @@
+docs/capabilities/periodic-report/README.md
+  s_b363f6463cadc3::t_d9c70d2e19ea1c 46-55,74-75,80-91,93,99-102
+docs/reference/protocols/periodic-report-v0.md
+  s_b363f6463cadc3::t_20706d801493a7 125-135,139-145
+loopx/capabilities/catalog.py
+  s_b363f6463cadc3::t_7d2c782634d1ef 584
+skills/loopx-self-repair/references/repair-patterns.md
+  s_b363f6463cadc3::t_1cddd26d8f7453 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3b6577682dadc98c498eb595e12e81998572a39d",
+  "prompts": {},
+  "sessions": {
+    "s_b363f6463cadc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7d92-180e-7471-94b9-7cc8d1e6a3a8",
+        "model": "unknown"
+      },
+      "human_author": "fujiajie.168 <fujiajie.168@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
